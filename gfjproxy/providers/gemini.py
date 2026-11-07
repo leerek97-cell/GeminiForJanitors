@@ -138,6 +138,16 @@ def gemini_generate_content(
             generation_config["frequencyPenalty"] = value
         elif key == "repetition_penalty":
             generation_config["presencePenalty"] = value
+        elif key == "reasoning_effort":
+            level = str(value).strip().lower()
+
+            if level in {"minimal", "low", "medium", "high"}:
+                generation_config["thinkingConfig"] = {
+                    "thinkingLevel": level.upper()
+                }
+                xlog(user, f"Gemini thinking level set to {level.upper()}")
+            else:
+                xlog(user, f"Ignoring unsupported thinking level: {value!r}")
         elif key == "search" and value:
             gemini_request["tools"] = [{"googleSearch": {}}]
 
