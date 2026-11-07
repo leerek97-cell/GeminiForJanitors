@@ -313,7 +313,7 @@ def handle_chat_message(
             "[Just the story/roleplay]\n"
             "</response>\n"
             "\n"
-            "This format helps separate your reasoning from the actual roleplay content.",
+            "This format helps separate your reasoning from the actual response.",
         )
 
         used_think = True
@@ -419,6 +419,10 @@ def handle_chat_message(
         used_noass = False
 
     settings = {}
+
+    if jai_req.reasoning_effort is not None:
+        settings["reasoning_effort"] = jai_req.reasoning_effort
+        xlog(user, f"Using reasoning effort: {jai_req.reasoning_effort}")
 
     for setting in [
         "temperature",
