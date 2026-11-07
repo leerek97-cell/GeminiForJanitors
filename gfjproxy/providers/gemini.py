@@ -90,7 +90,16 @@ def gemini_generate_content(
     User paramater is only used for logging. Generation settings must all be passed inside the
     settings parameter."""
 
+    model_id = model.lower().removeprefix("models/")
+    supports_native_thoughts = model_id.startswith(
+        ("gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash")
+    )
+
     generation_config: dict[str, Any] = {}
+    thinking_config: dict[str, Any] = {}
+    if supports_native_thoughts:
+        thinking_config["includeThoughts"] = True
+        generation_config["thinkingConfig"] = thinking_config
 
     gemini_request: dict[str, Any] = {
         "safetySettings": [
@@ -140,14 +149,26 @@ def gemini_generate_content(
             generation_config["presencePenalty"] = value
         elif key == "reasoning_effort":
             level = str(value).strip().lower()
+            if level in {"", "default", "model default", "model_default"}:
+                # Leave thinkingLevel unset so Gemini uses its model default.
+                continue
 
-            if level in {"minimal", "low", "medium", "high"}:
-                generation_config["thinkingConfig"] = {
-                    "thinkingLevel": level.upper()
-                }
+            if model_id.startswith("gemini-3.7-flash"):
+                supported_levels = {"low", "medium", "high"}
+            elif model_id.startswith(("gemini-3.6-flash", "gemini-3.5-flash-lite")):
+                supported_levels = {"minimal", "low", "medium", "high"}
+            else:
+                supported_levels = set()
+
+            if level == "minimal" and model_id.startswith("gemini-3.7-flash"):
+                level = "low"
+                xlog(user, "Gemini 3.7 Flash does not support MINIMAL; using LOW instead")
+
+            if level in supported_levels:
+                thinking_config["thinkingLevel"] = level.upper()
                 xlog(user, f"Gemini thinking level set to {level.upper()}")
             else:
-                xlog(user, f"Ignoring unsupported thinking level: {value!r}")
+                xlog(user, f"Ignoring unsupported Gemini thinking level {value!r} for {model}")
         elif key == "search" and value:
             gemini_request["tools"] = [{"googleSearch": {}}]
 
@@ -271,6 +292,7 @@ def gemini_generate_content(
         return JaiResult(502, "Unhanded exception from Google AI.")
 
     text = ""
+    thought_texts: list[str] = []
     extras = ""
     metadata = JaiResultMetadata()
 
@@ -290,8 +312,11 @@ def gemini_generate_content(
                     if isinstance(part, dict):
                         part_text = part.get("text")
                         part_thought = part.get("thought", False)
-                        if isinstance(part_text, str) and not part_thought:
-                            text += part_text
+                        if isinstance(part_text, str):
+                            if part_thought is True:
+                                thought_texts.append(part_text)
+                            else:
+                                text += part_text
 
             if gm := candidate.get("groundingMetadata"):
                 # U+3164 HANGUL FILLER
@@ -347,4 +372,11 @@ def gemini_generate_content(
         )
 
     track_stats("g.succeeded")
-    return JaiResult(200, text, extras=extras, metadata=metadata)
+    thoughts = "\n".join(part for part in thought_texts if part).strip()
+    return JaiResult(
+        200,
+        text,
+        extras=extras,
+        metadata=metadata,
+        thoughts=thoughts,
+    )
