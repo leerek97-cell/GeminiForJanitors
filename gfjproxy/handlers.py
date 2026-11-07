@@ -313,7 +313,7 @@ def handle_chat_message(
             "[Just the story/roleplay]\n"
             "</response>\n"
             "\n"
-            "This format helps separate your reasoning from the actual response.",
+            "This format helps separate your reasoning from the actual roleplay content.",
         )
 
         used_think = True
@@ -548,6 +548,28 @@ def handle_chat_message(
             text = f"<think>\n{thinking}\n</think>\n{text}"
 
         result.text = text
+
+    # Keep Gemini's actual thought summary separate from the legacy //think parser.
+    # This ensures //think_text keep/remove cannot remove genuine Gemini thoughts.
+    if result.thoughts.strip():
+        thoughts = result.thoughts.strip()
+        xlog(user, f"Received {len(thoughts.split())} thought words from Gemini")
+
+        # Merge with an existing leading <think> block instead of nesting duplicate tags.
+        existing_think = re.match(
+            r"^\s*<think>(.*?)</think>\s*", result.text, flags=re.DOTALL
+        )
+        if existing_think:
+            existing_text = existing_think.group(1).strip()
+            combined_thoughts = "\n\n".join(
+                part for part in (thoughts, existing_text) if part
+            )
+            result.text = (
+                f"<think>\n{combined_thoughts}\n</think>\n"
+                f"{result.text[existing_think.end():]}"
+            )
+        else:
+            result.text = f"<think>\n{thoughts}\n</think>\n{result.text}"
 
     result.text = result.text.strip()
 
