@@ -51,6 +51,7 @@ class JaiRequest:
 
     # Request body
     max_tokens: int = 0
+    reasoning_effort: str | None = None
     messages: list[JaiMessage] = field(default_factory=list)
     models: dict[str, str] = field(default_factory=dict)
     stream: bool = False
@@ -97,6 +98,10 @@ class JaiRequest:
 
         if max_tokens := data.get("max_tokens"):
             jai_req.max_tokens = max_tokens
+
+        reasoning_effort = data.get("reasoning_effort")
+        if isinstance(reasoning_effort, str):
+            jai_req.reasoning_effort = reasoning_effort.lower()
 
         if messages := data.get("messages"):
             jai_req.messages = [JaiMessage.parse(jai_msg) for jai_msg in messages]
