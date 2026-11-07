@@ -101,7 +101,7 @@ class JaiRequest:
 
         reasoning_effort = data.get("reasoning_effort")
         if isinstance(reasoning_effort, str):
-            jai_req.reasoning_effort = reasoning_effort.lower()
+            jai_req.reasoning_effort = reasoning_effort.strip().lower()
 
         if messages := data.get("messages"):
             jai_req.messages = [JaiMessage.parse(jai_msg) for jai_msg in messages]
@@ -172,6 +172,7 @@ class JaiResult:
     error: str
     extras: str
     metadata: JaiResultMetadata
+    thoughts: str
 
     def __init__(
         self,
@@ -180,6 +181,7 @@ class JaiResult:
         *,
         extras: str = "",
         metadata: JaiResultMetadata | None = None,
+        thoughts: str = "",
     ):
         self.status = status
 
@@ -192,6 +194,7 @@ class JaiResult:
 
         self.extras = extras
         self.metadata = metadata or JaiResultMetadata()
+        self.thoughts = thoughts
 
     def __bool__(self) -> bool:
         return self.status == 200
