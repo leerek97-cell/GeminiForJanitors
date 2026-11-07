@@ -34,7 +34,6 @@ Important Notes
 - Gemini returns thought summaries, not necessarily its complete internal reasoning.
 - Thought availability and content depend on the selected model and Google's API response.
 - This fork focuses on direct Google Gemini API integration.
-- The original OpenRouter provider has not been modified.
 
 ---
 
