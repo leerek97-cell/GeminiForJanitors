@@ -92,7 +92,12 @@ def gemini_generate_content(
 
     model_id = model.lower().removeprefix("models/")
     supports_native_thoughts = model_id.startswith(
-        ("gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash")
+        (
+            "gemini-3.5-flash-lite",
+            "gemini-3.6-flash",
+            "gemini-3.7-flash",
+            "gemini-4-hydrogen",
+        )
     )
 
     generation_config: dict[str, Any] = {}
@@ -153,16 +158,14 @@ def gemini_generate_content(
                 # Leave thinkingLevel unset so Gemini uses its model default.
                 continue
 
-            if model_id.startswith("gemini-3.7-flash"):
+            if model_id.startswith("gemini-4-hydrogen"):
+                supported_levels = {"low", "medium", "high", "xhigh"}
+            elif model_id.startswith("gemini-3.7-flash"):
                 supported_levels = {"low", "medium", "high"}
             elif model_id.startswith(("gemini-3.6-flash", "gemini-3.5-flash-lite")):
                 supported_levels = {"minimal", "low", "medium", "high"}
             else:
                 supported_levels = set()
-
-            if level == "minimal" and model_id.startswith("gemini-3.7-flash"):
-                level = "low"
-                xlog(user, "Gemini 3.7 Flash does not support MINIMAL; using LOW instead")
 
             if level in supported_levels:
                 thinking_config["thinkingLevel"] = level.upper()
