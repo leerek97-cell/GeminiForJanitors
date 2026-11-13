@@ -24,8 +24,9 @@ Tested Models
 
 The following models have been successfully tested:
 
-- Gemini 3.5 Flash-Lite
-- Gemini 3.6 Flash
+- gemini-3.5-flash-Lite
+- gemini-3.6-flash
+- gemini-4-hydrogen
 
 Gemini 3.7 Flash support is not yet confirmed because the Google API has repeatedly returned "503 UNAVAILABLE" errors due to high demand.
 
